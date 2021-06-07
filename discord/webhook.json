@@ -1,0 +1,48 @@
+{
+  "username": "TCL Bans",
+  "embeds": [
+    {
+      "title": "New addition to ban list",
+      "type": "rich",
+      "avatar": "https://cdn.discordapp.com/avatars/843845045000994826/4a33c0000f2c41f7833d9c53ee743404.png?size=256",
+      "url": "url",
+      "color": 2123412,
+      "fields": [
+        {
+          "name": "Discord Name",
+          "value": "Kirs#0418",
+          "inline": true
+        },
+        {
+          "name": "Tarkov Name",
+          "value": "Kirs",
+          "inline": true
+        },
+        {
+          "name": "Status",
+          "value": "This individual **<is / is not>** currently in your discord server.",
+          "inline": false
+        },
+        {
+          "name": "Ban reason",
+          "value": "<ban reason text>",
+          "inline": false
+        },
+        {
+          "name": "Evidence",
+          "value": "1) <link>\n2) <link>",
+          "inline": false
+        },
+        {
+          "name": "Decision",
+          "value": "If you wish to add this ban to your server then react to this message with a :thumbsup:.",
+          "inline": false
+        }
+      ],
+      "author": {
+        "name": "TCL Bans",
+        "url": "url"
+      }
+    }
+  ]
+}
