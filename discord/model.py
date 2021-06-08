@@ -4,10 +4,23 @@ from sqlalchemy.orm import sessionmaker, relationship
 
 Base = declarative_base()
 
-ban_servers = Table('ban_servers', Base.metadata,
-                    Column('ban_id', BigInteger, ForeignKey('bans.id')),
-                    Column('server_id', BigInteger, ForeignKey('servers.id'))
-                    )
+# ban_servers = Table('ban_servers', Base.metadata,
+#                     Column('ban_id', BigInteger, ForeignKey('bans.id')),
+#                     Column('server_id', BigInteger, ForeignKey('servers.id')),
+#                     Column('status', String),
+#                     Column('message_id', BigInteger)
+#                     )
+
+
+class BanServer(Base):
+    __tablename__ = 'ban_servers'
+    ban_id = Column(BigInteger, ForeignKey('bans.id'), primary_key=True)
+    server_id = Column(BigInteger, ForeignKey('servers.id'), primary_key=True)
+    status = Column(String(length=20))
+    message_id = Column(BigInteger)
+
+    server = relationship("Server", back_populates="bans")
+    ban = relationship("Ban", back_populates="servers")
 
 
 class Ban(Base):
@@ -16,11 +29,8 @@ class Ban(Base):
     id = Column(BigInteger, primary_key=True)  # obligatory
     banned_by = Column(BigInteger)
     reason = Column(Text)
-    servers = relationship(
-        "Server",
-        secondary=ban_servers,
-        back_populates="bans")
-
+    evidence = Column(Text)
+    servers = relationship("BanServer", back_populates="ban")
 
     def __repr__(self):  # optional
         return f'bans {self.id}'
@@ -31,11 +41,7 @@ class Server(Base):
 
     id = Column(BigInteger, primary_key=True)  # obligatory
     channel_id = Column(BigInteger)
-    reason = Column(Text)
-    bans = relationship(
-        "Ban",
-        secondary=ban_servers,
-        back_populates="servers")
+    bans = relationship("BanServer", back_populates="server")
 
     def __repr__(self):  # optional
         return f'servers {self.id}'
@@ -43,8 +49,6 @@ class Server(Base):
 
 def start():
     engine = create_engine('mysql://root:root@127.0.0.1:3306/tcl', echo=True)
-    # engine = create_engine('sqlite:///:memory:', echo=True)
-    # engine = create_engine('sqlite:///:memory:')
 
     Session = sessionmaker(bind=engine, autoflush=True)
     session = Session()
@@ -52,10 +56,7 @@ def start():
     Base.metadata.create_all(engine)
     return engine, session
 
-# ban_server_table = Table(
-#     "ban_server",
-#     metadata,
-#     Column('id', Integer, primary_key=True),
-#     Column('server_id', ForeignKey('servers.id'), nullable=False),
-#     Column('ban_id', ForeignKey('bans.id'), nullable=False),
-# )
+
+result = start()
+engine = result[0]
+session = result[1]
