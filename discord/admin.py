@@ -12,9 +12,12 @@ async def run_ban_list(client):
 
     for guild in client.guilds:
 
-        server_row = session.execute(select(Server).where(Server.id == guild.id)).scalar()
+        server_row = session.execute(
+            select(Server).where(Server.id == guild.id)).scalar()
         if not server_row or not server_row.channel_id:
             continue
+
+        loop_ban_list = {}
 
         # Sync database bans
         for ban_row in ban_list.values():
@@ -25,31 +28,52 @@ async def run_ban_list(client):
                     break
             if server_ban_row is False:
                 print('cannot find ban, sending new one')
-                server_ban_row = BanServer(status="registered", ban_id=ban_row.id, server_id=server_row.id)
+                server_ban_row = BanServer(
+                    status="registered", ban_id=ban_row.id, server_id=server_row.id)
                 session.add(server_ban_row)
-                server_ban_row = session.execute(select(BanServer).where(BanServer.ban_id == server_ban_row.ban_id).where(BanServer.server_id == server_row.id)).scalar()
+                server_ban_row = session.execute(select(BanServer).where(
+                    BanServer.ban_id == server_ban_row.ban_id).where(BanServer.server_id == server_row.id)).scalar()
                 message = await send_ban_message(guild, server_ban_row, client)
                 server_ban_row.message_id = message.id
                 session.add(server_ban_row)
                 session.commit()
-            # For every ban we have that this server does not have a row for
+            else:
+                channel = client.get_channel(server_ban_row.server.channel_id)
+                if not channel:
+                    # channel = discord.utils.find(lambda m: m.name == 'tcl-bot', guild.channels)
+                    continue  # TODO: catch here
 
+                if (server_ban_row.message_id):
+                    try:
+                        message = channel.get_partial_message(server_ban_row.message_id)
+                        message = await send_ban_message(guild, server_ban_row, client, message)
+                    except discord.errors.NotFound:
+                        # Message does not exist, might have been deleted
+                        message = await send_ban_message(guild, server_ban_row, client)
+
+                    if message.id != server_ban_row.message_id:
+                        print("Was previous ban message but unable to find.")
+                        server_ban_row.message_id = message.id
+                        session.add(server_ban_row)
+                        session.commit()
+
+            loop_ban_list[server_ban_row.ban_id] = server_ban_row
+
+            # if (server_ban_row.status == 'approved'):
+            #     await guild.ban(discord.Object(server_ban_row.ban_id), reason="TCL Bans: {}".format(server_ban_row.ban.reason))
 
         bans = await guild.bans()
-        loop_ban_list = ban_list
         for ban in bans:
-            if ban.user.id in loop_ban_list:
-                del loop_ban_list[ban.user.id]
+            if ban.user.id in loop_ban_list and loop_ban_list[ban.user.id].status == "approved":
+                del loop_ban_list[ban.user.id]  # is bannable
             elif ban.reason and ban.reason.startswith("TCL Bans:"):
                 # Banned but not in ban list
                 print("Unbanning {} from {}".format(ban.user.id, guild.name))
-
                 # await guild.unban(ban.user)
 
-        for id, ban in loop_ban_list.items():
+        for id, sban in loop_ban_list.items():
             print("Banning {} from {}".format(id, guild.name))
-
-            # await guild.ban(discord.Object(id), reason="TCL Bans: {}".format(ban.reason))
+            # await guild.ban(discord.Object(sban.ban_id), reason="TCL Bans: {}".format(sban.ban.reason))
 
 
 async def run(message, client):
@@ -145,7 +169,7 @@ async def run(message, client):
 
 
 async def send_ban_message(guild, ban_server, client, message=None):
-
+    reactions = []
     discord_user = await client.fetch_user(ban_server.ban_id)
     if not discord_user:
         return
@@ -165,9 +189,11 @@ async def send_ban_message(guild, ban_server, client, message=None):
     if (ban_server.status == 'registered'):
         embed.add_field(
             name="Decision", value="If you wish to add this ban to your server then react to this message with a :thumbsup:.", inline=False)
+        reactions.append('\U0001f44d')
     elif ban_server.status == 'approved':
         embed.add_field(
-            name="Decision", value="You have approved this ban and this account is now banned from your discord server.", inline=False)
+            name="Decision", value="You have approved this ban and this account is now banned from your discord server. You can unban this user by reacting to this message with a :thumbsdown:.", inline=False)
+        reactions.append('\U0001f44e')
     else:
         embed.add_field(
             name="Decision", value="N/A", inline=False)
@@ -179,10 +205,13 @@ async def send_ban_message(guild, ban_server, client, message=None):
 
     if (not message):
         message = await channel.send(embed=embed)
-        await message.add_reaction('\U0001f44d')
     else:
         await message.clear_reactions()
         message = await message.edit(embed=embed)
+
+    for reaction in reactions:
+        await message.add_reaction(reaction)
+
     # get channel in server
 
     return message
@@ -192,12 +221,15 @@ async def send_welcome_message(client, row):
     channel = client.get_channel(row.channel_id)
     if (channel):
         embed = discord.Embed(
-            title="Welcome", description="Welcome to TCL Bans, please make sure this BOT has permission to Manage Bans on this server. Messages will appear here when accounts are added to the TCL ban list.", color=0x384359)
+            title="Welcome", description="""
+            Welcome to TCL Bans, please make sure this BOT has permission to Manage Bans on this server. Messages will appear here when accounts are added to the TCL ban list.
+            This channel should have no messages posted other than those by this account, do not delete any messages posted by this account.""", color=0x384359)
         message = await channel.send(embed=embed)
 
 
 async def process_reaction(client, payload, message, channel):
-    row = session.execute(select(BanServer).where(BanServer.message_id == message.id)).scalar()
+    row = session.execute(select(BanServer).where(
+        BanServer.message_id == message.id)).scalar()
     if row:
         if payload.emoji.name == '\U0001f44d':
             # approve ban
