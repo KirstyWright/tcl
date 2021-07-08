@@ -48,9 +48,13 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+    if message.channel.id != int(config['DEFAULT']['AdminChannelId']):
+        await message.channel.send('This action can only be performed in the admin channel.')
+        return
+
     if message.content.startswith('$tcl'):
         if message.author.id not in json.loads(config['DEFAULT']['DiscordAdmins']):
-            await message.channel.send('You don\'t have power to do that')
+            await message.channel.send('You don\'t have power to do that.')
             return
 
         await admin.run(message, client)
@@ -71,4 +75,5 @@ async def on_raw_reaction_add(payload):
 
     await admin.process_reaction(client, payload, message, channel)
 
+client.admin_channel_id = config['DEFAULT']['AdminChannelId']
 client.run(config['DEFAULT']['DiscordToken'])

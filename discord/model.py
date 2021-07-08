@@ -30,7 +30,16 @@ class Ban(Base):
     banned_by = Column(BigInteger)
     reason = Column(Text)
     evidence = Column(Text)
+    tarkov = Column(String(length=256))
+    status = Column(Integer, default=0)
     servers = relationship("BanServer", back_populates="ban")
+
+    # status
+    # 100 inactive (initialised and awaiting tarkov name)
+    # 101 inactive (initialised and awaiting ban reason)
+    # 102 inactive (initialised and awaiting ban evidence)
+    # 103 inactive (awaiting ban approval)
+    # 1 active
 
     def __repr__(self):  # optional
         return f'bans {self.id}'
