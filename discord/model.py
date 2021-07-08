@@ -1,6 +1,10 @@
 from sqlalchemy import create_engine, Column, Integer, BigInteger, String, Text, Table, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+import configparser
+
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 Base = declarative_base()
 
@@ -10,7 +14,7 @@ Base = declarative_base()
 #                     Column('status', String),
 #                     Column('message_id', BigInteger)
 #                     )
-
+# SqlConnection
 
 class BanServer(Base):
     __tablename__ = 'ban_servers'
@@ -57,7 +61,7 @@ class Server(Base):
 
 
 def start():
-    engine = create_engine('mysql://root:root@127.0.0.1:3306/tcl', echo=True)
+    engine = create_engine(config['DEFAULT']['SqlConnection'], echo=True)
 
     Session = sessionmaker(bind=engine, autoflush=True)
     session = Session()
