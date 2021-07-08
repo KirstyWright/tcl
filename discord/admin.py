@@ -74,7 +74,7 @@ async def run_ban_list(client, single_guild_id=None):
             elif ban.reason and ban.reason.startswith("TCL Bans:"):
                 # Banned but not in ban list
                 print("Unbanning {} from {}".format(ban.user.id, guild.name))
-                await admin_log(client, "Unbanning {} from {}".format(ban.user.id, channel.guild.name))
+                await admin_log(client, "Unbanning {} from {}".format(ban.user.id, guild.name))
                 await guild.unban(ban.user)
 
         for id, sban in loop_ban_list.items():
