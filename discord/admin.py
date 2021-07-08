@@ -180,11 +180,19 @@ async def send_ban_message(guild, ban_server, client, message=None):
     if (message is None):
         message = await channel.send(embed=embed)
     else:
-        await message.clear_reactions()
+        message = await message.fetch()
         await message.edit(embed=embed)
+        # await message.clear_reactions()
+
+    emojis_in_use = []
+    for reaction in message.reactions:
+        emojis_in_use.append(reaction.emoji)
+        if reaction.emoji not in reactions:
+            await reaction.clear()
 
     for reaction in reactions:
-        await message.add_reaction(reaction)
+        if (reaction not in emojis_in_use):
+            await message.add_reaction(reaction)
 
     return message
 
