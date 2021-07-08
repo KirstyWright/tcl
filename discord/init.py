@@ -48,13 +48,13 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if message.channel.id != int(config['DEFAULT']['AdminChannelId']):
-        await message.channel.send('This action can only be performed in the admin channel.')
-        return
-
     if message.content.startswith('$tcl'):
         if message.author.id not in json.loads(config['DEFAULT']['DiscordAdmins']):
             await message.channel.send('You don\'t have power to do that.')
+            return
+
+        if message.channel.id != int(config['DEFAULT']['AdminChannelId']):
+            await message.channel.send('This action can only be performed in the admin channel.')
             return
 
         await admin.run(message, client)
