@@ -57,6 +57,11 @@ async def on_message(message):
             await message.channel.send('This action can only be performed in the admin channel.')
             return
 
+        if message.content.startswith('$tcl refresh'):
+            await refresh_servers(client)
+            await admin.run_ban_list(client)
+            return
+            
         await admin.run(message, client)
 
 

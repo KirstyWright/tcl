@@ -88,8 +88,6 @@ async def run(message, client):
     list = message.content.split()
     if message.content.startswith('$tcl new'):
         await commands.admin.start_draft_ban(client, message)
-    elif message.content.startswith('$tcl refresh'):
-        await run_ban_list(client)
     elif message.content.startswith('$tcl list'):
         results = session.execute(select(Ban).where(Ban.status == 1).order_by(Ban.id)).scalars()
         buffer = ""
