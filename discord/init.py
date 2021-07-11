@@ -41,6 +41,8 @@ async def refresh_servers(client):
                 session.add(server)
                 session.commit()
                 await admin.send_welcome_message(client, server)
+            else:
+                print('No channel called tcl-bot in guild {}'.format(guild.name))
 
 
 @client.event
@@ -61,7 +63,7 @@ async def on_message(message):
             await refresh_servers(client)
             await admin.run_ban_list(client)
             return
-            
+
         await admin.run(message, client)
 
 
